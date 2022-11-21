@@ -29,6 +29,11 @@ type DefaultParser struct {
 var userAgents = []string{
 	"Mozilla/5.0 (Windows NT 10.0; Win64; X64) AppleWebKit/537.36 (KHIML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
 	"Mozilla/5.0 (Windows NT 6.1; Win64; X64) AppleWebKit/537.36 (KHIML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
+
+	"Mozilla/4.0 (compatible; MSIE 7.0; America Online Browser 1.1; Windows NT 5.1; (R1 1.5); .NET CLR 2.0.50727; InfoPath.1)",
+	"Mozilla/4.0 (compatible; MSIE 7.0; America Online Browser 1.1; rev1.5; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
+	"Mozilla/4.0 (compatible; MSIE 7.0; America Online Browser 1.1; rev1.5; Windows NT 5.1; .NET CLR 1.1.4322)",
+	"Mozilla/4.0 (compatible; MSIE 7.0; America Online Browser 1.1; rev1.5; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322; Media Center PC 4.0; InfoPath.1; .NET CLR 2.0.50727; Media Center PC 3.0; InfoPath.2)",
 }
 
 func randomUserAgent() string {
@@ -44,7 +49,7 @@ func isSitemap(urls []string) ([]string, []string) {
 		foundSitemap := strings.Contains(page, "xml")
 		if foundSitemap == true {
 
-			fmt.Println("Found Sitemap", page)
+			fmt.Println("🔍 Found Sitemap::: ", page)
 			sitemapFiles = append(sitemapFiles, page)
 		} else {
 			pages = append(pages, page)
@@ -68,11 +73,11 @@ func extractSiteMapURLs(startURL string) []string {
 			go func(link string) {
 				response, err := makeRequest(link)
 				if err != nil {
-					log.Printf("Error retrieving URL:%s", link)
+					log.Printf("🐞 Error retrieving URL:%s", link)
 				}
 				urls, _ := extractUrls(response)
 				if err != nil {
-					log.Printf("Error extracting document from response, URL:%s", link)
+					log.Printf("🐞 Error extracting document from response, URL:%s", link)
 				}
 				sitemapFiles, pages := isSitemap(urls)
 				if sitemapFiles != nil {
@@ -110,6 +115,7 @@ func scrapeURLs(urls []string, parser Parser, concurrency int) []SeoData {
 	var n int
 	worklist := make(chan []string)
 	results := []SeoData{}
+	n++
 
 	go func() { worklist <- urls }()
 	for ; n > 0; n-- {
@@ -118,10 +124,10 @@ func scrapeURLs(urls []string, parser Parser, concurrency int) []SeoData {
 			if url != "" {
 				n++
 				go func(url string, token chan struct{}) {
-					log.Printf("Requesting URL:%s", url)
+					log.Printf("🚀 Requesting URL:%s", url)
 					res, err := scrapePage(url, tokens, parser)
 					if err != nil {
-						log.Printf("Encountered error, URL:%s", url)
+						log.Printf("🐞 Encountered error, URL:%s", url)
 					} else {
 						results = append(results, res)
 					}
@@ -168,6 +174,11 @@ func crawlPage(url string, tokens chan struct{}) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println()
+	fmt.Println("🚀 --- crawlPage URL : ", url)
+	fmt.Println()
+	log.Println(resp)
+	fmt.Println()
 	return resp, err
 }
 
@@ -194,7 +205,6 @@ func ScrapeSiteMap(url string, parser Parser, concurrency int) []SeoData {
 func main() {
 	p := DefaultParser{}
 	results := ScrapeSiteMap("https://www.quicksprout.com/sitemap.xml", p, 10)
-
 	for _, res := range results {
 		fmt.Println(res)
 	}
